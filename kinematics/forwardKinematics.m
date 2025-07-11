@@ -1,0 +1,36 @@
+% 正运动学：根据您提供的构型
+% 输入: theta1, theta2, theta3 - 关节角度(弧度)
+%       L1, L2, L3 - 连杆长度
+% 输出: x, y, z - 末端位置坐标
+%       joints - 各关节位置 [x坐标; y坐标; z坐标]    
+function [position, joints] = forwardKinematics(theta, L)
+    x0 = 0; y0 = 0; z0 = 0;
+    theta1 = theta(1);
+    theta2 = theta(2);
+    theta3 = theta(3);
+    L1 = L(1); L2 = L(2); L3 = L(3);
+    % 第一关节位置
+    x1 = L1 * cos(theta1);
+    y1 = L1 * sin(theta1);
+    z1 = 0;
+    
+    % 第二关节位置
+    
+    x2 = x1 + L2 * cos(theta2) * cos(theta1);
+    y2 = y1 + L2 * cos(theta2) * sin(theta1);
+    z2 = L2 * sin(theta2);
+    
+    % 末端位置
+    
+    x = x2 + L3 * cos(theta2 + theta3) * cos(theta1);
+    y = y2 + L3 * cos(theta2 + theta3) * sin(theta1);
+    z = z2 + L3 * sin(theta2 + theta3);
+    
+    % 返回所有关节位置
+    joints = [x0, x1, x2, x;
+              y0, y1, y2, y;
+              z0, z1, z2, z];
+    position = [x,y,z];
+    fprintf('目标位置: x=%.4f ; y=%.4f ; z=%.4f \n', x, y, z);
+end
+
