@@ -3,9 +3,9 @@
 %  function : 对参数辨识数据进行处理，提取恒定速度下的数据
 
 %% 1. 加载数据
-filenumber = 4;
+filenumber = 2;
 filename = 'bigarm_301';  %wrist_301/smallarm_301/bigarm_301
-jointnumber = 2; %4-wrist/3-smallarm/2-bigarm
+jointnumber = 4; %4-wrist/3-smallarm/2-bigarm
 load(sprintf('E:\\科研\\负载估计进一步实验\\参数辨识数据\\%s\\data%d\\Pi.mat', filename, filenumber));
 
 load(sprintf('E:\\科研\\负载估计进一步实验\\参数辨识数据\\%s\\data%d\\Pi.mat', filename, filenumber));
@@ -19,7 +19,7 @@ angle = q(jointnumber + 1, :); % 第3关节角度
 velocity= q_dot(jointnumber + 1, :); % 第3关节速度
 torque = tau(jointnumber + 1, :); % 第3关节力矩
 angle_deg = angle;
-  
+% velocity = velocity_filtered;
 %%
 figure;
 subplot 311
@@ -42,7 +42,7 @@ angle_filtered = movmean(angle_deg, window_size);
 
 % 设置阈值，避免小幅振荡被误认为过零点
 threshold = 0.0005/180*pi; % 阈值，单位：rad，可根据实际情况调整
-bias = 1;               % 定位，单位：rad，可根据实际情况调整
+bias = 68;               % 定位，单位：deg，可根据实际情况调整
 % 找到真正的过零点
 zero_crossings = [];
 i = 1;
@@ -52,7 +52,7 @@ while i < length(angle_filtered)
        (angle_filtered(i) < -threshold + bias  && angle_filtered(i+1) > threshold + bias )
         zero_crossings = [zero_crossings, i];
         % 跳过一定距离，避免在同一个过零点附近重复检测
-        min_distance = 1000; % 最小间隔点数，可根据采样率调整
+        min_distance = 100; % 最小间隔点数，可根据采样率调整
         i = i + min_distance;
     else
         i = i + 1;
@@ -96,7 +96,7 @@ plot(time, angle_filtered, 'r-', 'LineWidth', 1.5, 'DisplayName', '滤波后角�
 plot(cross_t, zeros(size(cross_t)) + bias, 'ro','MarkerSize',8,'DisplayName','检测到的过零点');
 yline(threshold + bias,'g--','DisplayName',sprintf('阈值 ±%.1f°', threshold + bias ));
 yline(-threshold + bias ,'g--');
-yline(0,'k-','LineWidth',1.5);
+yline(bias,'k-','LineWidth',1.5);
 xlabel('时间 (s)'); ylabel('角度 (rad)');
 title('改进的过零点检测（滤波+阈值）');
 legend; grid on;
@@ -144,6 +144,7 @@ grid on;
 
 %% 4. 数据段平均处理与存储
 fprintf('\n=== 数据段平均处理 ===\n');
+% 速度和力矩的噪声比较大，要用滤波器
 
 % 初始化存储数组
 segment_summary = struct();
@@ -153,10 +154,26 @@ segment_summary.velocity = [];
 segment_summary.torque = [];
 
 for k = 1:nSeg
-    segment_summary.time(k) = mean(times_new{k});
+    segment_summary.time(k)  = mean(times_new{k});
     segment_summary.angle(k) = mean(angles_new{k});
-    segment_summary.velocity(k) = mean(vels_new{k});
-    segment_summary.torque(k) = mean(torques_new{k});
+    
+    % 速度和力矩一次性处理
+    dataList = {vels_new{k}, torques_new{k}};     % 1:速度  2:力矩
+    names    = {'velocity', 'torque'};
+    
+    for idx = 1:2
+        y = dataList{idx};
+        win = min(15, numel(y));
+        if mod(win,2)==0, win = win+1; end
+        
+        if win >= 5
+            yf = sgolayfilt(y, 3, win);
+            val = yf(round(end/2));
+        else
+            val = y(end);
+        end
+        segment_summary.(names{idx})(k) = val;
+    end
 end
 
 % 显示结果
@@ -203,9 +220,9 @@ if ~exist('merge_summary','var')
     merge_summary.torque = cell(Max_filenumber,1);
 end
 %选择性开启
-delete_flag = 0;
+delete_flag = 1;
 if delete_flag
-    idx = 1;  % 要删除的索引
+    idx = [1:8];  % 要删除的索引
     segment_summary.time(idx) = [];
     segment_summary.angle(idx) = [];
     segment_summary.velocity(idx) = [];
@@ -225,7 +242,7 @@ fprintf('-------------------------------------------------------\n');
 % filenumber_idx = 3;
 velocity_f = [];
 tau_f = [];
-for filenumber_idx = 1 : 4
+for filenumber_idx = 1 : 2
     num_points = length(merge_summary.velocity{filenumber_idx});
     if mod(num_points, 2) == 1
         % If odd, exclude the last point
@@ -245,7 +262,7 @@ scatter(velocity_f,tau_f,'*');grid on;
 % scatter(velocity_f(52:end),tau_f(52:end),'o');
 %%
 % 删除元素(排除异常数据)
-indx_to_remove = find(velocity_f < -0.2 | velocity_f > 0.15  );
+indx_to_remove = find(velocity_f < -0.2 | velocity_f > 0.2  );
 new_velocity_f = velocity_f;
 new_tau_f = tau_f;
 new_velocity_f(indx_to_remove) = [];
