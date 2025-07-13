@@ -1,5 +1,8 @@
-% bin 2 mat 程序
-%% 文件读取
+%% Author : Manzhi Qi
+%  date : 2025/6/17
+%  function : bin 2 mat 程序
+%  description : 读取二进制文件，提取数据并保存为mat文件。
+%  version : 1.0
 close all;
 clc;clear;
 filename = 'data2.bin';   %  324-C3;  320-C2;  319-C1
