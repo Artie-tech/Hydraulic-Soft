@@ -6,7 +6,7 @@ Hydraulic-Soft/
 ├── hydraulic_and_soft/           # 刚体+软体合并代码
 │
 ├── kinematics/                   # 刚体运动学程序
-│   └── test_helper.py
+│  
 ├── MCG_algorithm/                # 拉格朗日动力学计算程序
 │  
 ├── hydraulic_manipulator/        # 刚体部分单独代码（可独立编译/运行）
