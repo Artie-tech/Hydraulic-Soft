@@ -46,7 +46,7 @@ function plotRobotWorkspace(number_loop, show_boundary)
         q_test = q_Limit_min + (q_Limit_max - q_Limit_min) .* rand(size(q_Limit_min));
         
         try
-            [pos, joints] = forwardKinematics(q_test, L);
+            [pos, ~] = forwardKinematics(q_test, L);
             x(ii) = pos(1);
             y(ii) = pos(2);
             z(ii) = pos(3);
