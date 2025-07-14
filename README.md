@@ -9,7 +9,7 @@ Hydraulic-Soft/
 │   └── test_helper.py
 ├── MCG_algorithm/                # 拉格朗日动力学计算程序
 │  
-├── hydraulic_manipulator/                 # 刚体部分单独代码（可独立编译/运行）
+├── hydraulic_manipulator/        # 刚体部分单独代码（可独立编译/运行）
 |
 ├── Load_estimation/              # 参数辨识代码        
 ├── .gitignore
